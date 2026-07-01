@@ -1,0 +1,32 @@
+query GetForms {
+  forms {
+    id
+    title
+    description
+    createdAt
+  }
+}
+
+query GetForm($id: ID!) {
+  form(id: $id) {
+    id
+    title
+    description
+    createdAt
+    questions {
+      id
+      type
+      label
+      options
+      required
+      order
+    }
+  }
+}
+
+mutation CreateForm($input: CreateFormInput!) {
+  createForm(input: $input) {
+    id
+    title
+  }
+}
