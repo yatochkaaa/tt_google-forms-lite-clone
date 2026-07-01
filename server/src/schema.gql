@@ -1,0 +1,41 @@
+# ------------------------------------------------------
+# THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+# ------------------------------------------------------
+
+type Answer {
+  questionId: ID!
+  values: [String!]!
+}
+
+"""
+A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
+"""
+scalar DateTime
+
+type Form {
+  createdAt: DateTime!
+  description: String
+  id: ID!
+  questions: [Question!]!
+  title: String!
+}
+
+type Query {
+  form(id: ID!): Form!
+}
+
+type Question {
+  id: ID!
+  label: String!
+  options: [String!]
+  order: Int!
+  required: Boolean!
+  type: QuestionType!
+}
+
+enum QuestionType {
+  CHECKBOX
+  DATE
+  MULTIPLE_CHOICE
+  TEXT
+}
