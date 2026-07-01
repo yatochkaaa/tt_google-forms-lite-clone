@@ -1,13 +1,24 @@
-import { Args, ID, Query, Resolver } from '@nestjs/graphql';
+import { Args, ID, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { Form } from './models/form.model';
 import { FormsService } from './forms.service';
+import { CreateFormInput } from './dto/create-form.input';
 
 @Resolver(() => Form)
 export class FormsResolver {
   constructor(private formsService: FormsService) {}
 
-  @Query(() => Form, { name: 'form' })
-  async getForm(@Args('id', { type: () => ID }) id: string) {
+  @Mutation(() => Form)
+  createForm(@Args('createFormData') createFormData: CreateFormInput) {
+    return this.formsService.create(createFormData);
+  }
+
+  @Query(() => Form, { name: 'form', nullable: true })
+  getForm(@Args('id', { type: () => ID }) id: string) {
     return this.formsService.findOneById(id);
+  }
+
+  @Query(() => [Form], { name: 'forms' })
+  getForms() {
+    return this.formsService.findAll();
   }
 }

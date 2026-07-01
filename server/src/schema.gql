@@ -7,6 +7,12 @@ type Answer {
   values: [String!]!
 }
 
+input CreateFormInput {
+  description: String
+  questions: [QuestionInput!]!
+  title: String!
+}
+
 """
 A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
 """
@@ -20,12 +26,25 @@ type Form {
   title: String!
 }
 
+type Mutation {
+  createForm(createFormData: CreateFormInput!): Form!
+}
+
 type Query {
-  form(id: ID!): Form!
+  form(id: ID!): Form
+  forms: [Form!]!
 }
 
 type Question {
   id: ID!
+  label: String!
+  options: [String!]
+  order: Int!
+  required: Boolean!
+  type: QuestionType!
+}
+
+input QuestionInput {
   label: String!
   options: [String!]
   order: Int!
