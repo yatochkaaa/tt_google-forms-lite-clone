@@ -7,6 +7,11 @@ type Answer {
   values: [String!]!
 }
 
+input AnswerInput {
+  questionId: ID!
+  values: [String!]!
+}
+
 input CreateFormInput {
   description: String
   questions: [QuestionInput!]!
@@ -26,13 +31,22 @@ type Form {
   title: String!
 }
 
+type FormResponse {
+  answers: [Answer!]!
+  createdAt: DateTime!
+  formId: ID!
+  id: ID!
+}
+
 type Mutation {
-  createForm(createFormData: CreateFormInput!): Form!
+  createForm(input: CreateFormInput!): Form!
+  submitResponse(input: ResponseInput!): FormResponse!
 }
 
 type Query {
   form(id: ID!): Form
   forms: [Form!]!
+  responses(formId: ID!): [FormResponse!]!
 }
 
 type Question {
@@ -57,4 +71,9 @@ enum QuestionType {
   DATE
   MULTIPLE_CHOICE
   TEXT
+}
+
+input ResponseInput {
+  answers: [AnswerInput!]!
+  formId: ID!
 }

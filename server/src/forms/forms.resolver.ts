@@ -8,8 +8,8 @@ export class FormsResolver {
   constructor(private formsService: FormsService) {}
 
   @Mutation(() => Form)
-  createForm(@Args('createFormData') createFormData: CreateFormInput) {
-    return this.formsService.create(createFormData);
+  createForm(@Args('input') input: CreateFormInput) {
+    return this.formsService.create(input);
   }
 
   @Query(() => Form, { name: 'form', nullable: true })
