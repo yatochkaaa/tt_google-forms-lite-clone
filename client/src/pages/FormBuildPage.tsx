@@ -11,7 +11,14 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import type { UseFormRegister, UseFormSetValue, FieldArrayWithId } from "react-hook-form";
+import type {
+  UseFormRegister,
+  UseFormSetValue,
+  FieldArrayWithId,
+  Control,
+  FieldErrors,
+} from "react-hook-form";
+import { useWatch } from "react-hook-form";
 import { useFormBuilder, type FormBuilderValues } from "../hooks/useFormBuilder";
 import { QuestionType } from "../api/generated";
 import { Header } from "../components/Header";
@@ -30,6 +37,8 @@ type QuestionCardProps = {
   index: number;
   register: UseFormRegister<FormBuilderValues>;
   setValue: UseFormSetValue<FormBuilderValues>;
+  control: Control<FormBuilderValues>;
+  errors: FieldErrors<FormBuilderValues>;
   onAddOption: () => void;
   onRemoveOption: (optionIndex: number) => void;
   onRemove: () => void;
@@ -40,12 +49,26 @@ function SortableQuestionCard({
   index,
   register,
   setValue,
+  control,
+  errors,
   onAddOption,
   onRemoveOption,
   onRemove,
 }: QuestionCardProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: field.id });
+
+  // Read the live registered type so UI responds immediately when user changes the select.
+  const currentType = useWatch({
+    control,
+    name: `questions.${index}.type`,
+    defaultValue: field.type,
+  });
+
+  const needsOptions =
+    currentType === QuestionType.MultipleChoice || currentType === QuestionType.Checkbox;
+
+  const labelError = errors.questions?.[index]?.label;
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -55,7 +78,11 @@ function SortableQuestionCard({
 
   return (
     <div ref={setNodeRef} style={style}>
-      <div className="bg-white border border-slate-200 border-l-4 border-l-indigo-300 rounded-lg px-6 py-5 space-y-3">
+      <div
+        className={`bg-white border border-slate-200 border-l-4 rounded-lg px-6 py-5 space-y-3 ${
+          labelError ? "border-l-red-400" : "border-l-indigo-300"
+        }`}
+      >
         <div className="flex items-start gap-3">
           <button
             type="button"
@@ -74,11 +101,22 @@ function SortableQuestionCard({
           </button>
 
           <div className="flex-1 flex items-start justify-between gap-4">
-            <input
-              {...register(`questions.${index}.label`)}
-              placeholder="Question"
-              className="flex-1 text-sm font-medium text-slate-800 placeholder:text-slate-300 outline-none border-b border-slate-100 pb-1.5 focus:border-indigo-400 transition-colors"
-            />
+            <div className="flex-1">
+              <input
+                {...register(`questions.${index}.label`, {
+                  required: "Question label is required",
+                })}
+                placeholder="Question"
+                className={`w-full text-sm font-medium placeholder:text-slate-300 outline-none border-b pb-1.5 transition-colors ${
+                  labelError
+                    ? "text-red-700 border-red-300 focus:border-red-400"
+                    : "text-slate-800 border-slate-100 focus:border-indigo-400"
+                }`}
+              />
+              {labelError && (
+                <p className="text-xs text-red-500 mt-1">{labelError.message}</p>
+              )}
+            </div>
             <select
               {...register(`questions.${index}.type`)}
               className="text-xs text-slate-500 border border-slate-200 rounded px-2 py-1 outline-none focus:border-indigo-400"
@@ -92,14 +130,13 @@ function SortableQuestionCard({
           </div>
         </div>
 
-        {(field.type === QuestionType.MultipleChoice ||
-          field.type === QuestionType.Checkbox) && (
+        {needsOptions && (
           <div className="space-y-2 pl-6">
             {field.options.map((_, optionIndex) => (
               <div key={optionIndex} className="flex items-center gap-2">
                 <span
                   className={`w-3 h-3 border border-slate-300 shrink-0 ${
-                    field.type === QuestionType.Checkbox ? "rounded-full" : "rounded-sm"
+                    currentType === QuestionType.Checkbox ? "rounded-full" : "rounded-sm"
                   }`}
                 />
                 <input
@@ -163,6 +200,8 @@ function FormBuildPage() {
   const {
     register,
     setValue,
+    errors,
+    control,
     onSubmit,
     fields,
     move,
@@ -210,6 +249,7 @@ function FormBuildPage() {
         <div className="bg-white border border-slate-200 border-l-4 border-l-indigo-500 rounded-lg px-6 py-5 space-y-4">
           <input
             {...register("title", {
+              required: true,
               onBlur: (e) => {
                 if (!e.target.value.trim()) {
                   setValue("title", "Untitled form");
@@ -239,6 +279,8 @@ function FormBuildPage() {
                   index={index}
                   register={register}
                   setValue={setValue}
+                  control={control}
+                  errors={errors}
                   onAddOption={() => addOption(index)}
                   onRemoveOption={(optionIndex) => removeOption(index, optionIndex)}
                   onRemove={() => removeQuestion(index)}

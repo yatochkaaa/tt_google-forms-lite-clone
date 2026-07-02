@@ -8,6 +8,8 @@ import "./index.css";
 
 api.enhanceEndpoints({
   endpoints: {
+    GetForms: { providesTags: ["Form"] },
+    CreateForm: { invalidatesTags: ["Form"] },
     GetResponses: { providesTags: ["Response"] },
     SubmitResponse: { invalidatesTags: ["Response"] },
   },

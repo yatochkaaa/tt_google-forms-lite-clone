@@ -16,7 +16,7 @@ export type FormBuilderValues = Omit<CreateFormInput, "questions"> & {
 export const useFormBuilder = () => {
   const [createForm, { isLoading }] = useCreateFormMutation();
   const [saveError, setSaveError] = useState(false);
-  const { register, control, handleSubmit, setValue } = useForm<FormBuilderValues>({
+  const { register, control, handleSubmit, setValue, formState: { errors } } = useForm<FormBuilderValues>({
     defaultValues: {
       title: "Untitled form",
       description: "",
@@ -62,15 +62,21 @@ export const useFormBuilder = () => {
   const onSubmit = handleSubmit(async ({ title, description, questions }) => {
     setSaveError(false);
     try {
-      await createForm({
-        input: {
-          title,
-          description,
-          questions: questions.map((q, i) => ({ ...q, order: i })),
-        },
-      }).unwrap();
+      const input = {
+        title,
+        description: description?.trim() || undefined,
+        questions: questions.map(({ type, label, required, options }, i) => ({
+          type,
+          label,
+          required,
+          options,
+          order: i,
+        })),
+      };
+      await createForm({ input }).unwrap();
       navigate("/");
-    } catch {
+    } catch (err) {
+      console.error("[FormBuilder] save failed:", err);
       setSaveError(true);
     }
   });
@@ -78,6 +84,8 @@ export const useFormBuilder = () => {
   return {
     register,
     setValue,
+    control,
+    errors,
     onSubmit,
     fields,
     move,
