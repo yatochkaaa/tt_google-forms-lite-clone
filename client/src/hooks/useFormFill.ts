@@ -1,5 +1,6 @@
+import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { useParams, useNavigate } from "react-router";
+import { useParams } from "react-router";
 import {
   useGetFormQuery,
   useSubmitResponseMutation,
@@ -11,15 +12,20 @@ type FormFillValues = { answers: AnswerMap };
 
 export const useFormFill = () => {
   const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
+  const [submitted, setSubmitted] = useState(false);
 
   const { data, isLoading: formLoading, error: formError } = useGetFormQuery({ id: id! });
   const [submitResponse, { isLoading: submitting, error: submitError }] =
     useSubmitResponseMutation();
 
-  const { register, handleSubmit, control, setValue } = useForm<FormFillValues>({
-    defaultValues: { answers: {} },
-  });
+  const {
+    register,
+    handleSubmit,
+    control,
+    setValue,
+    setError,
+    formState: { errors },
+  } = useForm<FormFillValues>({ defaultValues: { answers: {} } });
 
   const toggleCheckbox = (questionId: string, option: string, current: string[]) => {
     const next = current.includes(option)
@@ -31,6 +37,18 @@ export const useFormFill = () => {
   const onSubmit = handleSubmit(async ({ answers }) => {
     const form = data?.form;
     if (!form) return;
+
+    let hasError = false;
+    for (const q of form.questions) {
+      if (q.type === QuestionType.Checkbox && q.required) {
+        const raw = answers[q.id] as string[] | undefined;
+        if (!raw || raw.filter(Boolean).length === 0) {
+          setError(`answers.${q.id}`, { message: "This field is required" });
+          hasError = true;
+        }
+      }
+    }
+    if (hasError) return;
 
     await submitResponse({
       input: {
@@ -47,7 +65,8 @@ export const useFormFill = () => {
         }),
       },
     }).unwrap();
-    navigate("/");
+
+    setSubmitted(true);
   });
 
   return {
@@ -56,9 +75,11 @@ export const useFormFill = () => {
     formError,
     register,
     control,
+    errors,
     toggleCheckbox,
     onSubmit,
     submitting,
     submitError,
+    submitted,
   };
 };
