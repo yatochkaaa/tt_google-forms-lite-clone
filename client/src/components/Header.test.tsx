@@ -10,9 +10,9 @@ const renderHeader = (props: React.ComponentProps<typeof Header> = {}) =>
   );
 
 describe("Header", () => {
-  it('renders "Forms" brand link pointing to root', () => {
+  it('renders "Lite Forms" brand link pointing to root', () => {
     renderHeader();
-    const link = screen.getByRole("link", { name: "Forms" });
+    const link = screen.getByRole("link", { name: "Lite Forms" });
     expect(link).toBeInTheDocument();
     expect(link).toHaveAttribute("href", "/");
   });

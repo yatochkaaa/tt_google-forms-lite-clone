@@ -28,7 +28,8 @@ describe('ResponsesResolver', () => {
     }).compile();
 
     resolver = module.get(ResponsesResolver);
-    responsesService = module.get(ResponsesService) as jest.Mocked<ResponsesService>;
+    responsesService =
+      module.get<jest.Mocked<ResponsesService>>(ResponsesService);
   });
 
   describe('getResponsesByFormId', () => {

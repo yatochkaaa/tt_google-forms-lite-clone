@@ -20,7 +20,12 @@ describe('FormsService', () => {
         title: 'Quiz',
         questions: [
           { type: QuestionType.TEXT, label: 'Name', required: true, order: 0 },
-          { type: QuestionType.DATE, label: 'Birthday', required: false, order: 1 },
+          {
+            type: QuestionType.DATE,
+            label: 'Birthday',
+            required: false,
+            order: 1,
+          },
         ],
       });
       expect(form.questions).toHaveLength(2);
@@ -34,7 +39,13 @@ describe('FormsService', () => {
         title: 'Survey',
         description: 'Quick survey',
         questions: [
-          { type: QuestionType.MULTIPLE_CHOICE, label: 'Colour?', required: false, order: 0, options: ['Red', 'Blue'] },
+          {
+            type: QuestionType.MULTIPLE_CHOICE,
+            label: 'Colour?',
+            required: false,
+            order: 0,
+            options: ['Red', 'Blue'],
+          },
         ],
       });
       expect(form.title).toBe('Survey');

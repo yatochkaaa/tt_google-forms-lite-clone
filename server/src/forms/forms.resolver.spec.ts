@@ -23,18 +23,25 @@ describe('FormsResolver', () => {
         FormsResolver,
         {
           provide: FormsService,
-          useValue: { create: jest.fn(), findOneById: jest.fn(), findAll: jest.fn() },
+          useValue: {
+            create: jest.fn(),
+            findOneById: jest.fn(),
+            findAll: jest.fn(),
+          },
         },
       ],
     }).compile();
 
     resolver = module.get(FormsResolver);
-    formsService = module.get(FormsService) as jest.Mocked<FormsService>;
+    formsService = module.get<jest.Mocked<FormsService>>(FormsService);
   });
 
   describe('getForms', () => {
     it('returns all forms from the service', () => {
-      const forms = [makeForm({ title: 'A' }), makeForm({ id: 'form-2', title: 'B' })];
+      const forms = [
+        makeForm({ title: 'A' }),
+        makeForm({ id: 'form-2', title: 'B' }),
+      ];
       formsService.findAll.mockReturnValue(forms);
       expect(resolver.getForms()).toBe(forms);
     });

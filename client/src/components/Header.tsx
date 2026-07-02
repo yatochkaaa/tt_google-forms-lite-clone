@@ -12,7 +12,7 @@ export function Header({ breadcrumb, right }: HeaderProps) {
       <div className="max-w-2xl mx-auto px-6 h-14 flex items-center justify-between">
         <div className="flex items-center gap-2 text-sm font-semibold tracking-tight">
           <Link to="/" className="text-slate-800 hover:text-indigo-600 transition-colors">
-            Forms
+            Lite Forms
           </Link>
           {breadcrumb && (
             <>
