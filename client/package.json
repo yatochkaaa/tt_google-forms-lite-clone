@@ -19,6 +19,7 @@
     "graphql-request": "^7.4.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
+    "react-hook-form": "^7.80.0",
     "react-redux": "^9.3.0",
     "react-router": "^8.1.0",
     "tailwindcss": "^4.3.2"
