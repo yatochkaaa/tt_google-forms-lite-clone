@@ -24,6 +24,7 @@ export const useFormFill = () => {
     control,
     setValue,
     setError,
+    clearErrors,
     formState: { errors },
   } = useForm<FormFillValues>({ defaultValues: { answers: {} } });
 
@@ -32,6 +33,9 @@ export const useFormFill = () => {
       ? current.filter((v) => v !== option)
       : [...current, option];
     setValue(`answers.${questionId}`, next);
+    if (next.length > 0) {
+      clearErrors(`answers.${questionId}`);
+    }
   };
 
   const onSubmit = handleSubmit(async ({ answers }) => {

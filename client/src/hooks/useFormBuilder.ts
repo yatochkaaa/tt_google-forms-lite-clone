@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useForm, useFieldArray } from "react-hook-form";
 import { useNavigate } from "react-router";
 import {
@@ -13,7 +14,8 @@ export type FormBuilderValues = Omit<CreateFormInput, "questions"> & {
 };
 
 export const useFormBuilder = () => {
-  const [createForm, { isLoading, error }] = useCreateFormMutation();
+  const [createForm, { isLoading }] = useCreateFormMutation();
+  const [saveError, setSaveError] = useState(false);
   const { register, control, handleSubmit, setValue } = useForm<FormBuilderValues>({
     defaultValues: {
       title: "Untitled form",
@@ -58,14 +60,19 @@ export const useFormBuilder = () => {
   };
 
   const onSubmit = handleSubmit(async ({ title, description, questions }) => {
-    await createForm({
-      input: {
-        title,
-        description,
-        questions: questions.map((q, i) => ({ ...q, order: i })),
-      },
-    }).unwrap();
-    navigate("/");
+    setSaveError(false);
+    try {
+      await createForm({
+        input: {
+          title,
+          description,
+          questions: questions.map((q, i) => ({ ...q, order: i })),
+        },
+      }).unwrap();
+      navigate("/");
+    } catch {
+      setSaveError(true);
+    }
   });
 
   return {
@@ -79,6 +86,6 @@ export const useFormBuilder = () => {
     addOption,
     removeOption,
     isLoading,
-    error,
+    error: saveError,
   };
 };
