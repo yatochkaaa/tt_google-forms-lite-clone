@@ -1,3 +1,17 @@
+import {
+  DndContext,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import type { UseFormRegister, UseFormSetValue } from "react-hook-form";
 import { useFormBuilder } from "../hooks/useFormBuilder";
 import { QuestionType } from "../api/generated";
 import { Header } from "../components/Header";
@@ -9,12 +23,162 @@ const QUESTION_TYPE_LABELS: Record<QuestionType, string> = {
   [QuestionType.Date]: "Date",
 };
 
+type FieldItem = {
+  id: string;
+  type: QuestionType;
+  label: string;
+  required: boolean;
+  order: number;
+  options: string[];
+};
+
+type FormValues = {
+  title: string;
+  description?: string;
+  questions: FieldItem[];
+};
+
+type QuestionCardProps = {
+  field: FieldItem;
+  index: number;
+  register: UseFormRegister<FormValues>;
+  setValue: UseFormSetValue<FormValues>;
+  onAddOption: () => void;
+  onRemoveOption: (optionIndex: number) => void;
+  onRemove: () => void;
+};
+
+function SortableQuestionCard({
+  field,
+  index,
+  register,
+  setValue,
+  onAddOption,
+  onRemoveOption,
+  onRemove,
+}: QuestionCardProps) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
+    useSortable({ id: field.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.4 : 1,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style}>
+      <div className="bg-white border border-slate-200 border-l-4 border-l-indigo-300 rounded-lg px-6 py-5 space-y-3">
+        <div className="flex items-start gap-3">
+          <button
+            type="button"
+            className="mt-1 cursor-grab active:cursor-grabbing text-slate-300 hover:text-slate-400 shrink-0"
+            {...attributes}
+            {...listeners}
+          >
+            <svg width="12" height="20" viewBox="0 0 12 20" fill="currentColor">
+              <circle cx="4" cy="4" r="1.5" />
+              <circle cx="4" cy="10" r="1.5" />
+              <circle cx="4" cy="16" r="1.5" />
+              <circle cx="9" cy="4" r="1.5" />
+              <circle cx="9" cy="10" r="1.5" />
+              <circle cx="9" cy="16" r="1.5" />
+            </svg>
+          </button>
+
+          <div className="flex-1 flex items-start justify-between gap-4">
+            <input
+              {...register(`questions.${index}.label`)}
+              placeholder="Question"
+              className="flex-1 text-sm font-medium text-slate-800 placeholder:text-slate-300 outline-none border-b border-slate-100 pb-1.5 focus:border-indigo-400 transition-colors"
+            />
+            <select
+              {...register(`questions.${index}.type`)}
+              className="text-xs text-slate-500 border border-slate-200 rounded px-2 py-1 outline-none focus:border-indigo-400"
+            >
+              {Object.values(QuestionType).map((type) => (
+                <option key={type} value={type}>
+                  {QUESTION_TYPE_LABELS[type]}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        {(field.type === QuestionType.MultipleChoice ||
+          field.type === QuestionType.Checkbox) && (
+          <div className="space-y-2 pl-6">
+            {field.options.map((_, optionIndex) => (
+              <div key={optionIndex} className="flex items-center gap-2">
+                <span
+                  className={`w-3 h-3 border border-slate-300 shrink-0 ${
+                    field.type === QuestionType.Checkbox ? "rounded-full" : "rounded-sm"
+                  }`}
+                />
+                <input
+                  {...register(`questions.${index}.options.${optionIndex}`, {
+                    onBlur: (e) => {
+                      if (!e.target.value.trim()) {
+                        setValue(
+                          `questions.${index}.options.${optionIndex}`,
+                          `Option ${optionIndex + 1}`
+                        );
+                      }
+                    },
+                  })}
+                  placeholder={`Option ${optionIndex + 1}`}
+                  className="flex-1 text-xs text-slate-600 placeholder:text-slate-300 outline-none border-b border-slate-100 pb-1 focus:border-indigo-400 transition-colors"
+                />
+                {field.options.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => onRemoveOption(optionIndex)}
+                    className="text-slate-300 hover:text-red-400 text-xs transition-colors"
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+            ))}
+            <button
+              type="button"
+              onClick={onAddOption}
+              className="text-xs text-indigo-500 hover:text-indigo-700 mt-1"
+            >
+              + Add option
+            </button>
+          </div>
+        )}
+
+        <div className="flex items-center justify-between pt-2 border-t border-slate-100 pl-6">
+          <label className="flex items-center gap-2 text-xs text-slate-400 cursor-pointer">
+            <input
+              type="checkbox"
+              {...register(`questions.${index}.required`)}
+              className="accent-indigo-500"
+            />
+            Required
+          </label>
+          <button
+            type="button"
+            onClick={onRemove}
+            className="text-xs text-slate-300 hover:text-red-400 transition-colors"
+          >
+            Remove
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function FormBuildPage() {
   const {
     register,
     setValue,
     onSubmit,
     fields,
+    move,
     addQuestion,
     removeQuestion,
     addOption,
@@ -22,6 +186,19 @@ function FormBuildPage() {
     isLoading,
     error,
   } = useFormBuilder();
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
+  );
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      const from = fields.findIndex((f) => f.id === active.id);
+      const to = fields.findIndex((f) => f.id === over.id);
+      move(from, to);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -62,93 +239,27 @@ function FormBuildPage() {
           />
         </div>
 
-        {fields.map((field, index) => (
-          <div
-            key={field.id}
-            className="bg-white border border-slate-200 border-l-4 border-l-indigo-300 rounded-lg px-6 py-5 space-y-3"
+        <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
+          <SortableContext
+            items={fields.map((f) => f.id)}
+            strategy={verticalListSortingStrategy}
           >
-            <div className="flex items-start justify-between gap-4">
-              <input
-                {...register(`questions.${index}.label`)}
-                placeholder="Question"
-                className="flex-1 text-sm font-medium text-slate-800 placeholder:text-slate-300 outline-none border-b border-slate-100 pb-1.5 focus:border-indigo-400 transition-colors"
-              />
-              <select
-                {...register(`questions.${index}.type`)}
-                className="text-xs text-slate-500 border border-slate-200 rounded px-2 py-1 outline-none focus:border-indigo-400"
-              >
-                {Object.values(QuestionType).map((type) => (
-                  <option key={type} value={type}>
-                    {QUESTION_TYPE_LABELS[type]}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {(field.type === QuestionType.MultipleChoice ||
-              field.type === QuestionType.Checkbox) && (
-              <div className="space-y-2 pl-1">
-                {field.options.map((_, optionIndex) => (
-                  <div key={optionIndex} className="flex items-center gap-2">
-                    <span
-                      className={`w-3 h-3 border border-slate-300 shrink-0 ${
-                        field.type === QuestionType.Checkbox ? "rounded-full" : "rounded-sm"
-                      }`}
-                    />
-                    <input
-                      {...register(`questions.${index}.options.${optionIndex}`, {
-                        onBlur: (e) => {
-                          if (!e.target.value.trim()) {
-                            setValue(
-                              `questions.${index}.options.${optionIndex}`,
-                              `Option ${optionIndex + 1}`
-                            );
-                          }
-                        },
-                      })}
-                      placeholder={`Option ${optionIndex + 1}`}
-                      className="flex-1 text-xs text-slate-600 placeholder:text-slate-300 outline-none border-b border-slate-100 pb-1 focus:border-indigo-400 transition-colors"
-                    />
-                    {field.options.length > 1 && (
-                      <button
-                        type="button"
-                        onClick={() => removeOption(index, optionIndex)}
-                        className="text-slate-300 hover:text-red-400 text-xs transition-colors"
-                      >
-                        ✕
-                      </button>
-                    )}
-                  </div>
-                ))}
-                <button
-                  type="button"
-                  onClick={() => addOption(index)}
-                  className="text-xs text-indigo-500 hover:text-indigo-700 mt-1"
-                >
-                  + Add option
-                </button>
-              </div>
-            )}
-
-            <div className="flex items-center justify-between pt-2 border-t border-slate-100">
-              <label className="flex items-center gap-2 text-xs text-slate-400 cursor-pointer">
-                <input
-                  type="checkbox"
-                  {...register(`questions.${index}.required`)}
-                  className="accent-indigo-500"
+            <div className="space-y-4">
+              {fields.map((field, index) => (
+                <SortableQuestionCard
+                  key={field.id}
+                  field={field}
+                  index={index}
+                  register={register}
+                  setValue={setValue}
+                  onAddOption={() => addOption(index)}
+                  onRemoveOption={(optionIndex) => removeOption(index, optionIndex)}
+                  onRemove={() => removeQuestion(index)}
                 />
-                Required
-              </label>
-              <button
-                type="button"
-                onClick={() => removeQuestion(index)}
-                className="text-xs text-slate-300 hover:text-red-400 transition-colors"
-              >
-                Remove
-              </button>
+              ))}
             </div>
-          </div>
-        ))}
+          </SortableContext>
+        </DndContext>
 
         <div className="flex flex-wrap gap-2 pt-2">
           {Object.values(QuestionType).map((type) => (

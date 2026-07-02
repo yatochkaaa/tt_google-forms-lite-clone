@@ -21,7 +21,7 @@ export const useFormBuilder = () => {
       questions: [],
     },
   });
-  const { fields, append, remove, update } = useFieldArray({
+  const { fields, append, remove, update, move } = useFieldArray({
     control,
     name: "questions",
   });
@@ -73,6 +73,7 @@ export const useFormBuilder = () => {
     setValue,
     onSubmit,
     fields,
+    move,
     addQuestion,
     removeQuestion,
     addOption,
