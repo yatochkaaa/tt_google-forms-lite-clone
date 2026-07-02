@@ -11,8 +11,8 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import type { UseFormRegister, UseFormSetValue } from "react-hook-form";
-import { useFormBuilder } from "../hooks/useFormBuilder";
+import type { UseFormRegister, UseFormSetValue, FieldArrayWithId } from "react-hook-form";
+import { useFormBuilder, type FormBuilderValues } from "../hooks/useFormBuilder";
 import { QuestionType } from "../api/generated";
 import { Header } from "../components/Header";
 
@@ -23,26 +23,13 @@ const QUESTION_TYPE_LABELS: Record<QuestionType, string> = {
   [QuestionType.Date]: "Date",
 };
 
-type FieldItem = {
-  id: string;
-  type: QuestionType;
-  label: string;
-  required: boolean;
-  order: number;
-  options: string[];
-};
-
-type FormValues = {
-  title: string;
-  description?: string;
-  questions: FieldItem[];
-};
+type FieldItem = FieldArrayWithId<FormBuilderValues, "questions", "id">;
 
 type QuestionCardProps = {
   field: FieldItem;
   index: number;
-  register: UseFormRegister<FormValues>;
-  setValue: UseFormSetValue<FormValues>;
+  register: UseFormRegister<FormBuilderValues>;
+  setValue: UseFormSetValue<FormBuilderValues>;
   onAddOption: () => void;
   onRemoveOption: (optionIndex: number) => void;
   onRemove: () => void;

@@ -7,8 +7,8 @@ import {
   type QuestionInput,
 } from "../api/generated";
 
-type QuestionDraft = Omit<QuestionInput, "options"> & { options: string[] };
-type FormBuilderValues = Omit<CreateFormInput, "questions"> & {
+export type QuestionDraft = Omit<QuestionInput, "options"> & { options: string[] };
+export type FormBuilderValues = Omit<CreateFormInput, "questions"> & {
   questions: QuestionDraft[];
 };
 
